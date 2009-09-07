@@ -77,6 +77,11 @@ p :unbind
       end
     end
 
+    ##
+    # memcached responses possess the same order as their
+    # corresponding requests. Therefore quiet requests that have not
+    # yielded responses will be dropped silently to free memory from
+    # +@pending+
     def receive_packet(response)
       pending_pos = nil
       pending_callback = nil
