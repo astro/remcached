@@ -1,5 +1,6 @@
 require 'remcached/const'
 require 'remcached/packet'
+require 'remcached/client'
 
 module Memcached
   class << self
