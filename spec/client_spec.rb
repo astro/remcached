@@ -82,4 +82,50 @@ describe Memcached::Client do
       end
     end
   end
+
+  $n = 100
+  context "when incrementing a counter #{$n} times" do
+    it "should initialize the counter" do
+      run do
+        @cl.set(:key => 'counter',
+                :value => '0') do |result|
+          stop
+        end
+      end
+    end
+
+    it "should count #{$n} times" do
+      $counted = 0
+      def count
+        @cl.get(:key => 'counter') do |result|
+          result[:status].should == Memcached::Errors::NO_ERROR
+          value = result[:value].to_i
+          @cl.set(:key => 'counter',
+                  :value => (value + 1).to_s,
+                  :cas => result[:cas]) do |result|
+            if result[:status] == Memcached::Errors::KEY_EXISTS
+              count # again
+            else
+              result[:status].should == Memcached::Errors::NO_ERROR
+              $counted += 1
+              stop if $counted >= $n
+            end
+          end
+        end
+      end
+      run do
+        $n.times { count }
+      end
+    end
+
+    it "should have counted up to #{$n}" do
+      run do
+        @cl.get(:key => 'counter') do |result|
+          result[:status].should == Memcached::Errors::NO_ERROR
+          result[:value].to_i.should == $n
+          stop
+        end
+      end
+    end
+  end
 end
