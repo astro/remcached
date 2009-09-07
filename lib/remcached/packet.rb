@@ -1,3 +1,5 @@
+require 'remcached/pack_array'
+
 module Memcached
   class Packet
     def initialize(contents={})
@@ -44,7 +46,7 @@ module Memcached
 
     def self.parse_header(buf)
       pack_fmt = fields.collect { |name,fmt,default| fmt }.join
-      values = buf.unpack(pack_fmt)
+      values = PackArray.unpack(buf, pack_fmt)
 
       contents = {}
       fields.each do |name,fmt,default|
@@ -82,7 +84,7 @@ module Memcached
 
     def parse_extras(buf)
       pack_fmt = self.class.extras.collect { |name,fmt,default| fmt }.join
-      values = buf.unpack(pack_fmt)
+      values = PackArray.unpack(buf, pack_fmt)
       self.class.extras.each do |name,fmt,default|
         @self[name] = values.shift || default
       end
@@ -95,7 +97,7 @@ module Memcached
         values << self[name]
         pack_fmt += fmt
       end
-      values.pack(pack_fmt)
+      PackArray.pack(values, pack_fmt)
     end
 
     def extras_to_s
@@ -106,7 +108,7 @@ module Memcached
         pack_fmt += fmt
       end
 
-      values.pack(pack_fmt)
+      PackArray.pack(values, pack_fmt)
     end
   end
 
