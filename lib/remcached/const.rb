@@ -11,6 +11,8 @@ module Memcached
     INVALID_ARGS = 0x0004
     ITEM_NOT_STORED = 0x0005
     NON_NUMERIC_VALUE = 0x0006
+
+    DISCONNECTED = 0xffff
   end
 
   module Commands

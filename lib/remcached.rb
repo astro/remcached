@@ -4,34 +4,78 @@ require 'remcached/client'
 
 module Memcached
   class << self
-    def new(servers)
-      raise 'Hashing not supported right now' if servers.length != 1
-      @servers = servers
+    ##
+    # +servers+: either Array of host:port strings or Hash of
+    # host:port => weight integers
+    def servers=(servers)
+      if defined?(@clients) && @clients
+        while client = @clients.shift
+          client.close
+        end
+      end
+
+      @clients = servers.collect { |server|
+        host, port = server.split(':')
+        Client.connect host, (port && port.to_i)
+      }
     end
   
-    def get(keys)
-      keys.collect! { |key| key.gsub(/[ \t\r\n]/, '_') }
+    def usable?
+      usable_clients.length > 0
     end
 
-    def set(keys)
+    def usable_clients
+      unless defined?(@clients) && @clients
+        []
+      else
+        @clients.select { |client| client.connected? }
+      end
     end
 
-    private
-
-    def server_for_key(key)
-      # TODO: how many are alive?
-      h = self.class.hash_key(key) % @servers.length
-      @servers[h]
+    def client_for_key(key)
+      usable_clients_ = usable_clients
+      if usable_clients_.empty?
+        nil
+      else
+        h = hash_key(key) % usable_clients_.length
+        usable_clients_[h]
+      end
     end
-  end
 
-  # Used internally, exposed for testing
-  def hash_key(key)
-    hashed = 0
-    key.bytes.each_with_index do |c, p|
-      p = (3 - p) * 8
-      hashed ^= c << p
+    def hash_key(key)
+      hashed = 0
+      key.bytes.each_with_index do |b, i|
+        j = key.length - i - 1 % 4
+        hashed ^= b << (j * 8)
+      end
+      hashed
     end
-    hashed
+
+    def operation(op, contents, &callback)
+      client = client_for_key(contents[:key])
+      if client
+        client.send(op, contents, &callback)
+      elsif callback
+        callback.call :status => Errors::DISCONNECTED
+      end
+    end
+
+
+    ##
+    # Memcached operations
+    ##
+
+    def add(contents, &callback)
+      operation :add, contents, &callback
+    end
+    def get(contents, &callback)
+      operation :get, contents, &callback
+    end
+    def set(contents, &callback)
+      operation :set, contents, &callback
+    end
+    def delete(contents, &callback)
+      operation :delete, contents, &callback
+    end
   end
 end

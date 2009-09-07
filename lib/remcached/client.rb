@@ -14,25 +14,41 @@ module Memcached
       end
     end
 
+    def connected?
+      @connected
+    end
+
     def reconnect
       @connect_deferrable = EventMachine::DefaultDeferrable.new
       super @host, @port
       @connect_deferrable
     end
 
+    def close
+      close_connection
+      @connected = false
+      @pending.each do |opaque, callback|
+        callback.call :status => Errors::DISCONNECTED
+      end
+    end
+
     def post_init
       @recv_buf = ""
       @recv_state = :header
+      @connected = false
     end
 
     def connection_completed
+      @connected = true
       @connect_deferrable.succeed(self)
     end
 
+    RECONNECT_DELAY = 10
+    RECONNECT_JITTER = 5
     def unbind
-p :unbind
-      # TODO: delayed!
-      #reconnect
+      close
+      EventMachine::Timer.new(RECONNECT_DELAY + rand(RECONNECT_JITTER),
+                              method(:reconnect))
     end
 
     def send_packet(pkt)
