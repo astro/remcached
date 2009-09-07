@@ -70,7 +70,7 @@ describe Memcached::Packet do
         @pkt[:data_type].should == 0
       end
       it "should return the right status" do
-        @pkt[:status].should == 1
+        @pkt[:status].should == Memcached::Errors::KEY_NOT_FOUND
       end
       it "should return the right opaque" do
         @pkt[:opaque].should == 0
