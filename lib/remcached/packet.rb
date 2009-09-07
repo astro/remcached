@@ -56,7 +56,10 @@ module Memcached
       new contents
     end
 
+    # Return remaining bytes
     def parse_body(buf)
+      buf, rest = buf[0..(self[:total_body_length] - 1)], buf[self[:total_body_length]..-1]
+
       if self[:extras_length] > 0
         self[:extras] = parse_extras(buf[0..(self[:extras_length]-1)])
       else
@@ -68,6 +71,8 @@ module Memcached
         self[:key] = ""
       end
       self[:value] = buf[(self[:extras_length]+self[:key_length])..-1]
+
+      rest
     end
 
     def to_s
@@ -145,6 +150,12 @@ module Memcached
     def self.parse_header(buf)
       me = super
       me[:magic] == 0x80 ? me : nil
+    end
+
+    class Get < Request
+      def initialize(contents)
+        super(contents.merge :opcode=>Commands::GET)
+      end
     end
 
     class Add < Request

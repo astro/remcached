@@ -1,11 +1,11 @@
 $: << File.dirname(__FILE__) + '/../lib'
 require 'remcached'
 
-describe Memcached::Server do
+describe Memcached::Client do
 
-  def run
+  def run(&block)
     EM.run do
-      Memcached::Server.new('localhost') { yield }
+      @cl = Memcached::Client.connect('localhost', &block)
     end
   end
   def stop
@@ -15,18 +15,20 @@ describe Memcached::Server do
 
   it "should set a value" do
     run do
-      Memcached.set(:key => 'Hello',
-                    :value => 'World') do |*a|
-        p a
+      @cl.set(:key => 'Hello',
+              :value => 'World') do |result|
+        result.should be_kind_of(Memcached::Response)
+        result[:status].should == Memcached::Errors::NO_ERROR
+        result[:cas].should_not == 0
         stop
       end
     end
   end
   it "should get a value" do
     run do
-      Memcached.get(:key => 'Hello') do |result|
-        result[:body].should == 'World'
-        result[:cas].should != 'Hello'
+      @cl.get(:key => 'Hello') do |result|
+        result[:value].should == 'World'
+        result[:cas].should_not == 0
         stop
       end
     end

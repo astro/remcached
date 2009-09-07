@@ -12,7 +12,6 @@ module Memcached
           @connect_deferrable = df
         }
       end
-p :connecting
     end
 
     def reconnect
@@ -21,60 +20,87 @@ p :connecting
       @connect_deferrable
     end
 
-    def initialize(*a)
-      super
-      @opaque_counter = 0
-      @callbacks = {}
+    def post_init
       @recv_buf = ""
       @recv_state = :header
     end
 
     def connection_completed
-p :connection_completed
-      @connect_deferrable.succeed
+      @connect_deferrable.succeed(self)
     end
 
     def unbind
+p :unbind
       # TODO: delayed!
-      reconnect
+      #reconnect
     end
 
-    def send_request(pkt, &callback)
-      @opaque_counter += 1
-      @opaque_counter %= 1 << 32
-      pkt[:opaque] = @opaque_counter
+    def send_packet(pkt)
       send_data pkt.to_s
-
-      if callback
-        @callbacks[@opaque_counter] = callback
-      end
     end
 
     def receive_data(data='')
       @recv_buf += data
 
-      if @state == :header && @recv_buf.length >= 24
-        @response = Response.parse_header(@recv_buf[0..23])
+      if @recv_state == :header && @recv_buf.length >= 24
+        @received = Response.parse_header(@recv_buf[0..23])
         @recv_buf = @recv_buf[24..-1]
-        @state = :body
+        @recv_state = :body
         receive_data
 
-      elsif @state == :body && @recv_buf.length >= @response.total_body_length
-        @received.parse_body @recv_buf
-        receive_response(@response[0..(@received.total_body_length - 1)])
+      elsif @recv_state == :body && @recv_buf.length >= @received[:total_body_length]
+        @recv_buf = @received.parse_body(@recv_buf)
+        receive_packet(@received)
 
-        @recv_buf = @recv_buf[@received.total_body_length..-1]
-        @state = :header
+        @recv_state = :header
         receive_data
 
       end
     end
   end
 
-  class Server < Connection
+  class Client < Connection
+    def post_init
+      super
+      @opaque_counter = 0
+      @pending = []
+    end
 
-    def receive_response(response)
-      p :response => response
+    def send_request(pkt, &callback)
+      @opaque_counter += 1
+      @opaque_counter %= 1 << 32
+      pkt[:opaque] = @opaque_counter
+      send_packet pkt
+
+      if callback
+        @pending << [@opaque_counter, callback]
+      end
+    end
+
+    def receive_packet(response)
+      pending_pos = nil
+      pending_callback = nil
+      @pending.each_with_index do |(pending_opaque,pending_cb),i|
+        if response[:opaque] == pending_opaque
+          pending_pos = i
+          pending_callback = pending_cb
+          break
+        end
+      end
+
+      if pending_pos
+        @pending = @pending[(pending_pos+1)..-1]
+        pending_callback.call response
+      end
+    end
+
+
+    def get(contents, &callback)
+      send_request Request::Get.new(contents), &callback
+    end
+
+    def set(contents, &callback)
+      send_request Request::Set.new(contents), &callback
     end
   end
 end
