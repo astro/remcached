@@ -16,7 +16,7 @@ module Memcached
 
       @clients = servers.collect { |server|
         host, port = server.split(':')
-        Client.connect host, (port && port.to_i)
+        Client.connect host, (port ? port.to_i : 11211)
       }
     end
   
