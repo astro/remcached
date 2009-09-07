@@ -84,6 +84,42 @@ describe Memcached::Packet do
         @pkt[:value].should == "Not found"
       end
     end
-  end
 
+    context "example 4.2.1" do
+      before :all do
+        s =  "\x81\x00\x00\x00" +
+          "\x04\x00\x00\x00" +
+          "\x00\x00\x00\x09" +
+          "\x00\x00\x00\x00" +
+          "\x00\x00\x00\x00" +
+          "\x00\x00\x00\x01" +
+          "\xde\xad\xbe\xef" +
+          "World"
+        @pkt = Memcached::Response.parse_header(s[0..23])
+        @pkt.parse_body(s[24..-1])
+      end
+
+      it "should return the right class according to magic & opcode" do
+        @pkt[:magic].should == 0x81
+        @pkt[:opcode].should == 0
+        @pkt.class.should == Memcached::Response
+      end
+      it "should return the right data type" do
+        @pkt[:data_type].should == 0
+      end
+      it "should return the right status" do
+        @pkt[:status].should == Memcached::Errors::NO_ERROR
+      end
+      it "should return the right opaque" do
+        @pkt[:opaque].should == 0
+      end
+      it "should return the right CAS" do
+        @pkt[:cas].should == 1
+      end
+      it "should parse the body correctly" do
+        @pkt[:key].should == ""
+        @pkt[:value].should == "World"
+      end
+    end
+  end
 end
