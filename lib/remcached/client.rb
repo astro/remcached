@@ -99,8 +99,17 @@ p :unbind
       send_request Request::Get.new(contents), &callback
     end
 
+    def add(contents, &callback)
+      send_request Request::Add.new(contents), &callback
+    end
+
     def set(contents, &callback)
       send_request Request::Set.new(contents), &callback
     end
+
+    def delete(contents, &callback)
+      send_request Request::Delete.new(contents), &callback
+    end
+
   end
 end
