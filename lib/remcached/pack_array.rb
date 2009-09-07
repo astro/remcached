@@ -1,3 +1,9 @@
+##
+# Works exactly like Array#pack and String#unpack, except that it
+# inverts 'q' & 'Q' prior packing/after unpacking. This is done to
+# achieve network byte order for these values on a little-endian machine.
+#
+# FIXME: implement check for big-endian machines.
 module Memcached::PackArray
   def self.pack(ary, fmt1)
     fmt2 = ''
