@@ -24,6 +24,7 @@ module Memcached
     INCREMENT = 0x05
     DECREMENT = 0x06
     QUIT = 0x07
+    STAT = 0x10
 
 =begin
    Possible values of the one-byte field:

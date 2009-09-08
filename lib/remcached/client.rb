@@ -102,6 +102,10 @@ module Memcached
     # corresponding requests. Therefore quiet requests that have not
     # yielded responses will be dropped silently to free memory from
     # +@pending+
+    #
+    # When a callback has been fired and returned +:proceed+ without a
+    # succeeding packet, we still keep it referenced around for
+    # commands such as STAT which has multiple response packets.
     def receive_packet(response)
       pending_pos = nil
       pending_callback = nil
@@ -114,8 +118,14 @@ module Memcached
       end
 
       if pending_pos
-        @pending = @pending[(pending_pos+1)..-1]
-        pending_callback.call response
+        @pending = @pending[pending_pos..-1]
+        begin
+          if pending_callback.call(response) != :proceed
+            @pending.shift
+          end
+        rescue Exception => e
+          $stderr.puts "#{e.class}: #{e}\n" + e.backtrace.join("\n")
+        end
       end
     end
 
@@ -136,5 +146,15 @@ module Memcached
       send_request Request::Delete.new(contents), &callback
     end
 
+    # Callback will be called multiple times
+    def stats(contents={}, &callback)
+      send_request Request::Stats.new(contents) do |result|
+        callback.call result
+
+        if result[:status] == Errors::NO_ERROR && result[:key] != ''
+          :proceed
+        end
+      end
+    end
   end
 end

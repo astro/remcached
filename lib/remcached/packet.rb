@@ -181,6 +181,12 @@ module Memcached
         super(contents.merge :opcode=>Commands::DELETE)
       end
     end
+
+    class Stats < Request
+      def initialize(contents)
+        super(contents.merge :opcode=>Commands::STAT)
+      end
+    end
   end
 
   ##
