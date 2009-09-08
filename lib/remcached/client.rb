@@ -55,22 +55,26 @@ module Memcached
       send_data pkt.to_s
     end
 
-    def receive_data(data='')
+    def receive_data(data)
       @recv_buf += data
 
-      if @recv_state == :header && @recv_buf.length >= 24
-        @received = Response.parse_header(@recv_buf[0..23])
-        @recv_buf = @recv_buf[24..-1]
-        @recv_state = :body
-        receive_data
+      done = false
+      while not done
 
-      elsif @recv_state == :body && @recv_buf.length >= @received[:total_body_length]
-        @recv_buf = @received.parse_body(@recv_buf)
-        receive_packet(@received)
+        if @recv_state == :header && @recv_buf.length >= 24
+          @received = Response.parse_header(@recv_buf[0..23])
+          @recv_buf = @recv_buf[24..-1]
+          @recv_state = :body
 
-        @recv_state = :header
-        receive_data
+        elsif @recv_state == :body && @recv_buf.length >= @received[:total_body_length]
+          @recv_buf = @received.parse_body(@recv_buf)
+          receive_packet(@received)
 
+          @recv_state = :header
+
+        else
+          done = true
+        end
       end
     end
   end
