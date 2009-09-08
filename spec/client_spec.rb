@@ -15,7 +15,7 @@ describe Memcached::Client do
 
   it "should add a value" do
     run do
-      @cl.set(:key => 'Hello',
+      @cl.add(:key => 'Hello',
               :value => 'World') do |result|
         result.should be_kind_of(Memcached::Response)
         result[:status].should == Memcached::Errors::NO_ERROR
