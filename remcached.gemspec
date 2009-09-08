@@ -9,11 +9,7 @@ Gem::Specification.new do |s|
   s.date = %q{2009-09-08}
   s.description = %q{Ruby EventMachine memcached client}
   s.email = %q{astro@spaceboyz.net}
-  s.extra_rdoc_files = [
-    "README.md"
-  ]
   s.files = [
-    "README.md",
     "Rakefile",
     "VERSION.yml",
     "lib/remcached.rb",
