@@ -44,9 +44,11 @@ module Memcached
 
     def hash_key(key)
       hashed = 0
-      key.bytes.each_with_index do |b, i|
+      i = 0
+      key.each_byte do |b|
         j = key.length - i - 1 % 4
         hashed ^= b << (j * 8)
+        i += 1
       end
       hashed
     end
