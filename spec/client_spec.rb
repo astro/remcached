@@ -9,6 +9,7 @@ describe Memcached::Client do
     end
   end
   def stop
+    @cl.close_connection
     EM.stop
   end
 

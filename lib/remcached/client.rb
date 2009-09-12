@@ -24,14 +24,6 @@ module Memcached
       @connect_deferrable
     end
 
-    def close
-      close_connection
-      @connected = false
-      @pending.each do |opaque, callback|
-        callback.call :status => Errors::DISCONNECTED
-      end
-    end
-
     def post_init
       @recv_buf = ""
       @recv_state = :header
@@ -46,7 +38,7 @@ module Memcached
     RECONNECT_DELAY = 10
     RECONNECT_JITTER = 5
     def unbind
-      close
+      @connected = false
       EventMachine::Timer.new(RECONNECT_DELAY + rand(RECONNECT_JITTER),
                               method(:reconnect))
     end
@@ -83,6 +75,14 @@ module Memcached
     def post_init
       super
       @opaque_counter = 0
+      @pending = []
+    end
+
+    def unbind
+      super
+      @pending.each do |opaque, callback|
+        callback.call :status => Errors::DISCONNECTED
+      end
       @pending = []
     end
 

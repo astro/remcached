@@ -17,6 +17,7 @@ describe Memcached::Client do
     end
   end
   def stop
+    Memcached.servers = []
     EM.stop
   end
 
