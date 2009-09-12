@@ -5,12 +5,15 @@ require 'remcached/client'
 module Memcached
   class << self
     ##
-    # +servers+: either Array of host:port strings or Hash of
-    # host:port => weight integers
+    # +servers+: Array of host:port strings
     def servers=(servers)
       if defined?(@clients) && @clients
         while client = @clients.shift
-          client.close
+          begin
+            client.close
+          rescue Exception
+            # This is allowed to fail silently
+          end
         end
       end
 
