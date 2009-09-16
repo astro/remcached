@@ -7,7 +7,8 @@ describe Memcached do
       Memcached.servers = %w(127.0.0.2 localhost:11212 localhost localhost)
 
       @timer = EM::PeriodicTimer.new(0.01) do
-        if Memcached.usable?
+        # at least localhost & localhost
+        if Memcached.usable_clients.length >= 2
           @timer.cancel
           block.call
         end
