@@ -2,6 +2,8 @@ require 'remcached/pack_array'
 
 module Memcached
   class Packet
+    ##
+    # Initialize with fields
     def initialize(contents={})
       @contents = contents
       (self.class.fields +
@@ -10,15 +12,20 @@ module Memcached
       end
     end
 
+    ##
+    # Get field
     def [](field)
       @contents[field]
     end
 
+    ##
+    # Set field
     def []=(field, value)
       @contents[field] = value
     end
 
-    # Define fields for subclasses
+    ##
+    # Define a field for subclasses
     def self.field(name, packed, default=nil)
       instance_eval do
         @fields ||= []
@@ -26,6 +33,8 @@ module Memcached
       end
     end
 
+    ##
+    # Fields of parent and this class
     def self.fields
       parent_class = ancestors[1]
       parent_fields = parent_class.respond_to?(:fields) ? parent_class.fields : []
@@ -33,6 +42,8 @@ module Memcached
       parent_fields + class_fields
     end
 
+    ##
+    # Define an extra for subclasses
     def self.extra(name, packed, default=nil)
       instance_eval do
         @extras ||= []
@@ -40,6 +51,8 @@ module Memcached
       end
     end
 
+    ##
+    # Extras of this class
     def self.extras
       parent_class = ancestors[1]
       parent_extras = parent_class.respond_to?(:extras) ? parent_class.extras : []
@@ -47,6 +60,8 @@ module Memcached
       parent_extras + class_extras
     end
 
+    ##
+    # Build a packet by parsing header fields
     def self.parse_header(buf)
       pack_fmt = fields.collect { |name,fmt,default| fmt }.join
       values = PackArray.unpack(buf, pack_fmt)
@@ -59,7 +74,11 @@ module Memcached
       new contents
     end
 
-    # Return remaining bytes
+    ##
+    # Parse body of packet when the +:total_body_length+ field is
+    # known by header. Pass it at least +total_body_length+ bytes.
+    #
+    # return:: [String] remaining bytes
     def parse_body(buf)
       buf, rest = buf[0..(self[:total_body_length] - 1)], buf[self[:total_body_length]..-1]
 
@@ -78,6 +97,8 @@ module Memcached
       rest
     end
 
+    ##
+    # Serialize for wire
     def to_s
       extras_s = extras_to_s
       key_s = self[:key].to_s
