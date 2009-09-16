@@ -129,26 +129,6 @@ module Memcached
       end
     end
 
-    # use Memcached interface, not Client class
-    def get(contents, &callback)
-      send_request Request::Get.new(contents), &callback
-    end
-
-    # use Memcached interface, not Client class
-    def add(contents, &callback)
-      send_request Request::Add.new(contents), &callback
-    end
-
-    # use Memcached interface, not Client class
-    def set(contents, &callback)
-      send_request Request::Set.new(contents), &callback
-    end
-
-    # use Memcached interface, not Client class
-    def delete(contents, &callback)
-      send_request Request::Delete.new(contents), &callback
-    end
-
     # Callback will be called multiple times
     def stats(contents={}, &callback)
       send_request Request::Stats.new(contents) do |result|

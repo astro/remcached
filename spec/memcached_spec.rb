@@ -21,6 +21,125 @@ describe Memcached do
     EM.stop
   end
 
+
+  context "when doing a simple operation" do
+    it "should add a value" do
+      run do
+        Memcached.add(:key => 'Hello',
+                :value => 'World') do |result|
+          result.should be_kind_of(Memcached::Response)
+          result[:status].should == Memcached::Errors::NO_ERROR
+          result[:cas].should_not == 0
+          stop
+        end
+      end
+    end
+
+    it "should get a value" do
+      run do
+        Memcached.get(:key => 'Hello') do |result|
+          result.should be_kind_of(Memcached::Response)
+          result[:status].should == Memcached::Errors::NO_ERROR
+          result[:value].should == 'World'
+          result[:cas].should_not == 0
+          @old_cas = result[:cas]
+          stop
+        end
+      end
+    end
+
+    it "should set a value" do
+      run do
+        Memcached.set(:key => 'Hello',
+                :value => 'Planet') do |result|
+          result.should be_kind_of(Memcached::Response)
+          result[:status].should == Memcached::Errors::NO_ERROR
+          result[:cas].should_not == 0
+          result[:cas].should_not == @old_cas
+          stop
+        end
+      end
+    end
+
+    it "should get a value" do
+      run do
+        Memcached.get(:key => 'Hello') do |result|
+          result.should be_kind_of(Memcached::Response)
+          result[:status].should == Memcached::Errors::NO_ERROR
+          result[:value].should == 'Planet'
+          result[:cas].should_not == @old_cas
+          stop
+        end
+      end
+    end
+
+    it "should delete a value" do
+      run do
+        Memcached.delete(:key => 'Hello') do |result|
+          result.should be_kind_of(Memcached::Response)
+          result[:status].should == Memcached::Errors::NO_ERROR
+          stop
+        end
+      end
+    end
+
+    it "should not get a value" do
+      run do
+        Memcached.get(:key => 'Hello') do |result|
+          result.should be_kind_of(Memcached::Response)
+          result[:status].should == Memcached::Errors::KEY_NOT_FOUND
+          stop
+        end
+      end
+    end
+
+    $n = 100
+    context "when incrementing a counter #{$n} times" do
+      it "should initialize the counter" do
+        run do
+          Memcached.set(:key => 'counter',
+                  :value => '0') do |result|
+            stop
+          end
+        end
+      end
+
+      it "should count #{$n} times" do
+        $counted = 0
+        def count
+          Memcached.get(:key => 'counter') do |result|
+            result[:status].should == Memcached::Errors::NO_ERROR
+            value = result[:value].to_i
+            Memcached.set(:key => 'counter',
+                    :value => (value + 1).to_s,
+                    :cas => result[:cas]) do |result|
+              if result[:status] == Memcached::Errors::KEY_EXISTS
+                count # again
+              else
+                result[:status].should == Memcached::Errors::NO_ERROR
+                $counted += 1
+                stop if $counted >= $n
+              end
+            end
+          end
+        end
+        run do
+          $n.times { count }
+        end
+      end
+
+      it "should have counted up to #{$n}" do
+        run do
+          Memcached.get(:key => 'counter') do |result|
+            result[:status].should == Memcached::Errors::NO_ERROR
+            result[:value].to_i.should == $n
+            stop
+          end
+        end
+      end
+    end
+  end
+
   context "when using multiple servers" do
     it "should not return the same hash for the succeeding key" do
       run do
