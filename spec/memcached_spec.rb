@@ -6,10 +6,9 @@ describe Memcached do
     EM.run do
       Memcached.servers = %w(127.0.0.2 localhost:11212 localhost localhost)
 
-      started = false
-      EM::PeriodicTimer.new(0.1) do
-        if !started && Memcached.usable?
-          started = true
+      @timer = EM::PeriodicTimer.new(0.01) do
+        if Memcached.usable?
+          @timer.cancel
           block.call
         end
       end
