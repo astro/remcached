@@ -175,4 +175,81 @@ describe Memcached do
     end
   end
 
+  context "when manipulating multiple records at once" do
+    before :all do
+      @n = 10
+    end
+
+    def key(n)
+      "test:item:#{n}"
+    end
+
+    it "should add some items" do
+      run do
+        items = []
+        @n.times { |i|
+          items << { :key => key(i),
+                     :value => 'Foo',
+                     :expiration => 20 } if i % 2 ==  0
+        }
+        Memcached.multi_add(items) { |responses|
+          stop
+          @n.times { |i|
+            if i % 2 == 0 && (response_i = responses[key(i)])
+              response_i[:status].should == Memcached::Errors::NO_ERROR
+            end
+          }
+        }
+      end
+    end
+
+    it "should get all items" do
+      run do
+        items = []
+        @n.times { |i|
+          items << { :key => key(i) }
+        }
+        Memcached.multi_get(items) { |responses|
+          stop
+          @n.times { |i|
+            if i % 2 == 0
+              responses.should have_key(key(i))
+              responses[key(i)][:status].should == Memcached::Errors::NO_ERROR
+              responses[key(i)][:value].should == 'Foo'
+            else
+              # either no response because request was quiet, or not
+              # found in case of last response
+              if (response_i = responses[key(i)])
+                response_i[:status].should == Memcached::Errors::KEY_NOT_FOUND
+              end
+            end
+          }
+        }
+      end
+    end
+
+    it "should delete all items" do
+      run do
+        items = []
+        @n.times { |i|
+          items << { :key => key(i) }
+        }
+        Memcached.multi_delete(items) { |responses|
+          stop
+          @n.times { |i|
+            if i % 2 == 0
+              # either no response because request was quiet, or ok in
+              # case of last response
+              if (response_i = responses[key(i)])
+                response_i[:status].should == Memcached::Errors::NO_ERROR
+              end
+            else
+              responses[key(i)][:status].should == Memcached::Errors::KEY_NOT_FOUND
+            end
+          }
+        }
+      end
+    end
+  end
+
 end

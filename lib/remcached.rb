@@ -56,6 +56,11 @@ module Memcached
       hashed
     end
 
+
+    ##
+    # Memcached operations
+    ##
+
     def operation(request_klass, contents, &callback)
       client = client_for_key(contents[:key])
       if client
@@ -64,11 +69,6 @@ module Memcached
         callback.call :status => Errors::DISCONNECTED
       end
     end
-
-
-    ##
-    # Memcached operations
-    ##
 
     def add(contents, &callback)
       operation Request::Add, contents, &callback
@@ -82,5 +82,72 @@ module Memcached
     def delete(contents, &callback)
       operation Request::Delete, contents, &callback
     end
+
+
+    ##
+    # Multi operations
+    #
+    ##
+
+    def multi_operation(request_klass, contents_list, &callback)
+      results = {}
+
+      # Assemble client connections per keys
+      client_contents = {}
+      contents_list.each do |contents|
+        client = client_for_key(contents[:key])
+        if client
+          client_contents[client] ||= []
+          client_contents[client] << contents
+        else
+          puts "no client for #{contents[:key].inspect}"
+          results[contents[:key]] = {:status => Memcached::Errors::DISCONNECTED}
+        end
+      end
+
+      # send requests and wait for responses per client
+      clients_pending = client_contents.length
+      client_contents.each do |client,contents_list|
+        last_i = contents_list.length - 1
+        client_results = {}
+
+        contents_list.each_with_index do |contents,i|
+          if i < last_i
+            request = request_klass::Quiet.new(contents)
+            client.send_request(request) { |response|
+              results[contents[:key]] = response
+            }
+          else # last request for this client
+            request = request_klass.new(contents)
+            client.send_request(request) { |response|
+              results[contents[:key]] = response
+              clients_pending -= 1
+              if clients_pending < 1
+                callback.call results
+              end
+            }
+          end
+        end
+      end
+
+      self
+    end
+
+    def multi_add(contents_list, &callback)
+      multi_operation Request::Add, contents_list, &callback
+    end
+
+    def multi_get(contents_list, &callback)
+      multi_operation Request::Get, contents_list, &callback
+    end
+
+    def multi_set(contents_list, &callback)
+      multi_operation Request::Set, contents_list, &callback
+    end
+
+    def multi_delete(contents_list, &callback)
+      multi_operation Request::Delete, contents_list, &callback
+    end
+
   end
 end

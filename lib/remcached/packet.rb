@@ -41,7 +41,10 @@ module Memcached
     end
 
     def self.extras
-      instance_eval { @extras || [] }
+      parent_class = ancestors[1]
+      parent_extras = parent_class.respond_to?(:extras) ? parent_class.extras : []
+      class_extras = instance_eval { @extras || [] }
+      parent_extras + class_extras
     end
 
     def self.parse_header(buf)
@@ -154,7 +157,13 @@ module Memcached
 
     class Get < Request
       def initialize(contents)
-        super(contents.merge :opcode=>Commands::GET)
+        super({:opcode=>Commands::GET}.merge(contents))
+      end
+
+      class Quiet < Get
+        def initialize(contents)
+          super({:opcode=>Commands::GETQ}.merge(contents))
+        end
       end
     end
 
@@ -163,7 +172,13 @@ module Memcached
       extra :expiration, 'N', 0
 
       def initialize(contents)
-        super(contents.merge :opcode=>Commands::ADD)
+        super({:opcode=>Commands::ADD}.merge(contents))
+      end
+
+      class Quiet < Add
+        def initialize(contents)
+          super({:opcode=>Commands::ADDQ}.merge(contents))
+        end
       end
     end
 
@@ -172,19 +187,31 @@ module Memcached
       extra :expiration, 'N', 0
 
       def initialize(contents)
-        super(contents.merge :opcode=>Commands::SET)
+        super({:opcode=>Commands::SET}.merge(contents))
+      end
+
+      class Quiet < Set
+        def initialize(contents)
+          super({:opcode=>Commands::SETQ}.merge(contents))
+        end
       end
     end
 
     class Delete < Request
       def initialize(contents)
-        super(contents.merge :opcode=>Commands::DELETE)
+        super({:opcode=>Commands::DELETE}.merge(contents))
+      end
+
+      class Quiet < Delete
+        def initialize(contents)
+          super({:opcode=>Commands::DELETEQ}.merge(contents))
+        end
       end
     end
 
     class Stats < Request
       def initialize(contents)
-        super(contents.merge :opcode=>Commands::STAT)
+        super({:opcode=>Commands::STAT}.merge(contents))
       end
     end
   end

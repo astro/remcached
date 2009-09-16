@@ -25,6 +25,10 @@ module Memcached
     DECREMENT = 0x06
     QUIT = 0x07
     STAT = 0x10
+    GETQ = 0x09
+    SETQ = 0x11
+    ADDQ = 0x12
+    DELETEQ = 0x14
 
 =begin
    Possible values of the one-byte field:
