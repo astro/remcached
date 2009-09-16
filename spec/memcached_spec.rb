@@ -105,7 +105,7 @@ describe Memcached do
       end
 
       it "should count #{$n} times" do
-        $counted = 0
+        @counted = 0
         def count
           Memcached.get(:key => 'counter') do |result|
             result[:status].should == Memcached::Errors::NO_ERROR
@@ -117,8 +117,8 @@ describe Memcached do
                 count # again
               else
                 result[:status].should == Memcached::Errors::NO_ERROR
-                $counted += 1
-                stop if $counted >= $n
+                @counted += 1
+                stop if @counted >= $n
               end
             end
           end
