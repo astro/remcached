@@ -56,10 +56,10 @@ module Memcached
       hashed
     end
 
-    def operation(op, contents, &callback)
+    def operation(request_klass, contents, &callback)
       client = client_for_key(contents[:key])
       if client
-        client.send(op, contents, &callback)
+        client.send_request request_klass.new(contents), &callback
       elsif callback
         callback.call :status => Errors::DISCONNECTED
       end
@@ -71,16 +71,16 @@ module Memcached
     ##
 
     def add(contents, &callback)
-      operation :add, contents, &callback
+      operation Request::Add, contents, &callback
     end
     def get(contents, &callback)
-      operation :get, contents, &callback
+      operation Request::Get, contents, &callback
     end
     def set(contents, &callback)
-      operation :set, contents, &callback
+      operation Request::Set, contents, &callback
     end
     def delete(contents, &callback)
-      operation :delete, contents, &callback
+      operation Request::Delete, contents, &callback
     end
   end
 end
