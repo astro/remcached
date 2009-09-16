@@ -1,7 +1,7 @@
 $: << File.dirname(__FILE__) + '/../lib'
 require 'remcached'
 
-describe Memcached::Client do
+describe Memcached do
   def run(&block)
     EM.run do
       Memcached.servers = %w(127.0.0.2 localhost:11212 localhost localhost)
