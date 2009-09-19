@@ -1,7 +1,7 @@
 remcached
 =========
 
-* uses Ruby EventMachine for the asynchronous programming model
+* **R**uby **E**vent**M**achine mem**cached** client implementation
 * provides a direct interface to the memcached protocol and its
   semantics
 * uses the memcached `binary protocol`_ to reduce parsing overhead on
@@ -20,8 +20,9 @@ Callbacks
 Each request `may` be passed a callback. These are not two-cased
 (success & failure) EM deferrables, but standard Ruby callbacks. The
 rationale behind this is that there are no usual success/failure
-responses, but you may want to evaluate a response[:status] yourself
-to check for cache miss, version conflict, network disconnects.
+responses, but you will want to evaluate a ``response[:status]``
+yourself to check for cache miss, version conflict, network
+disconnects etc.
 
 A callback may be kept if it returns ``:proceed`` to catch
 multi-response commands such as ``STAT``.
@@ -38,9 +39,10 @@ Multi commands
 --------------
 
 The technique is described in the `binary protocol`_ spec in section
-4.2. Memcached.multi_operation will help you exactly with that,
-sending lots of those `quiet` commands, except for the last, which
-will be a `normal` command to trigger an acknowledge for all commands.
+**4.2**. ``Memcached.multi_operation`` will help you exactly with
+that, sending lots of those `quiet` commands, except for the last,
+which will be a `normal` command to trigger an acknowledge for all
+commands.
 
 This is of course implemented per-server to accomodate
 load-balancing.
@@ -54,8 +56,9 @@ First, pass your memcached servers to the library::
     Memcached.servers = %w(localhost localhost:11212 localhost:11213)
 
 Note that it won't be connected immediately. Use ``Memcached.usable?``
-to check. This is however discouraged and you should check
-``response[:status] == Memcached::Errors::DISCONNECTED``
+to check. This however complicates your own code and you can check
+``response[:status] == Memcached::Errors::DISCONNECTED`` for network
+errors in all your response callbacks.
 
 Further usage is pretty straight-forward::
 
