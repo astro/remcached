@@ -1,7 +1,7 @@
 remcached
 =========
 
-* **R**uby **E**vent**M**achine mem**cached** client implementation
+* **Ruby EventMachine memCACHED client implementation**
 * provides a direct interface to the memcached protocol and its
   semantics
 * uses the memcached `binary protocol`_ to reduce parsing overhead on
