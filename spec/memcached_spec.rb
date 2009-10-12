@@ -250,6 +250,19 @@ describe Memcached do
         }
       end
     end
+
+    context "when the multi operation is empty" do
+      it "should return immediately" do
+        @results = []
+        @calls = 0
+        Memcached.multi_add([]) { |responses|
+          @results += responses
+          @calls += 1
+        }
+        @results.should be_empty
+        @calls.should == 1
+      end
+    end
   end
 
 end

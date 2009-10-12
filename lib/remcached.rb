@@ -90,6 +90,11 @@ module Memcached
     ##
 
     def multi_operation(request_klass, contents_list, &callback)
+      if contents_list.empty?
+        callback.call []
+        return self
+      end
+
       results = {}
 
       # Assemble client connections per keys
