@@ -28,19 +28,36 @@ module Memcached
       @recv_buf = ""
       @recv_state = :header
       @connected = false
+      @keepalive_timer = nil
     end
 
     def connection_completed
       @connected = true
       @connect_deferrable.succeed(self)
+
+      @last_receive = Time.now
+      @keepalive_timer = EventMachine::PeriodicTimer.new(1, &method(:keepalive))
     end
 
     RECONNECT_DELAY = 10
     RECONNECT_JITTER = 5
     def unbind
+      @keepalive_timer.cancel if @keepalive_timer
+
       @connected = false
       EventMachine::Timer.new(RECONNECT_DELAY + rand(RECONNECT_JITTER),
                               method(:reconnect))
+    end
+
+    RECEIVE_TIMEOUT = 15
+    KEEPALIVE_INTERVAL = 5
+    def keepalive
+      if @last_receive + RECEIVE_TIMEOUT <= Time.now
+        p :timeout
+        close_connection
+      elsif @last_receive + KEEPALIVE_INTERVAL <= Time.now
+        send_keepalive
+      end
     end
 
     def send_packet(pkt)
@@ -49,6 +66,7 @@ module Memcached
 
     def receive_data(data)
       @recv_buf += data
+      @last_receive = Time.now
 
       done = false
       while not done
@@ -127,6 +145,10 @@ module Memcached
           $stderr.puts "#{e.class}: #{e}\n" + e.backtrace.join("\n")
         end
       end
+    end
+
+    def send_keepalive
+      send_request Request::NoOp.new
     end
 
     # Callback will be called multiple times

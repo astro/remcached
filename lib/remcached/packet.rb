@@ -235,6 +235,12 @@ module Memcached
         super({:opcode=>Commands::STAT}.merge(contents))
       end
     end
+
+    class NoOp < Request
+      def initialize
+        super(:opcode=>Commands::NOOP)
+      end
+    end
   end
 
   ##

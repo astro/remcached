@@ -33,4 +33,14 @@ describe Memcached::Client do
       @stats.should include(*%w(pid uptime time version curr_connections total_connections))
     end
   end
+
+=begin
+  it "should keep alive" do
+    run do
+      EM::Timer.new(30) do
+        stop
+      end
+    end
+  end
+=end
 end

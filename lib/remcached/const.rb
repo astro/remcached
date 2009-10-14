@@ -29,6 +29,7 @@ module Memcached
     SETQ = 0x11
     ADDQ = 0x12
     DELETEQ = 0x14
+    NOOP = 0x0a
 
 =begin
    Possible values of the one-byte field:
