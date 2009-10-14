@@ -3,9 +3,9 @@
 # Experimentally determine how many items fit in your memcached
 # instance. Adjust parameters below for your scenario.
 
-BATCH_SIZE = 1000
-KEY_SIZE = 20
-VALUE_SIZE = 20
+BATCH_SIZE = 10000
+KEY_SIZE = 26
+VALUE_SIZE = 0
 
 
 $: << File.dirname(__FILE__) + "/../lib"
