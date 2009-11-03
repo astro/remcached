@@ -80,7 +80,11 @@ module Memcached
     #
     # return:: [String] remaining bytes
     def parse_body(buf)
-      buf, rest = buf[0..(self[:total_body_length] - 1)], buf[self[:total_body_length]..-1]
+      if self[:total_body_length] < 1
+        buf, rest = "", buf
+      else
+        buf, rest = buf[0..(self[:total_body_length] - 1)], buf[self[:total_body_length]..-1]
+      end
 
       if self[:extras_length] > 0
         self[:extras] = parse_extras(buf[0..(self[:extras_length]-1)])

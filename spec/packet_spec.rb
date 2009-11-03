@@ -121,5 +121,23 @@ describe Memcached::Packet do
         @pkt[:value].should == "World"
       end
     end
+
+    describe :parse_body do
+      it "should return succeeding bytes" do
+        s = "\x81\x01\x00\x00" +
+          "\x00\x00\x00\x00" +
+          "\x00\x00\x00\x00" +
+          "\x00\x00\x00\x00" +
+          "\x00\x00\x00\x00" +
+          "\x00\x00\x00\x01" +
+          "chunky bacon"
+        @pkt = Memcached::Response.parse_header(s[0..23])
+        s = @pkt.parse_body(s[24..-1])
+        @pkt[:status].should == 0
+        @pkt[:total_body_length].should == 0
+        @pkt[:value].should == ""
+        s.should == "chunky bacon"
+      end
+    end
   end
 end
