@@ -1,5 +1,6 @@
 $: << File.dirname(__FILE__) + '/../lib'
 require 'remcached'
+require 'em-spec/rspec'
 
 describe Memcached do
   def run(&block)
@@ -261,6 +262,20 @@ describe Memcached do
         }
         @results.should be_empty
         @calls.should == 1
+      end
+    end
+
+    context "when servers are disconnected" do
+      include EM::SpecHelper
+
+      it "should return immediately with response" do
+        em(1) do
+          keys = [ { :key => key(0) } ]
+          Memcached.multi_get(keys) { |responses|
+            responses[key(0)][:status].should == Memcached::Errors::DISCONNECTED
+            stop
+          }
+        end
       end
     end
   end
