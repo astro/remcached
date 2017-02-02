@@ -110,6 +110,11 @@ module Memcached
         end
       end
 
+      if client_contents.empty?
+        callback.call results
+        return self
+      end
+
       # send requests and wait for responses per client
       clients_pending = client_contents.length
       client_contents.each do |client,contents_list|
