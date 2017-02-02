@@ -16,13 +16,13 @@ describe Memcached::Packet do
       end
 
       it "should serialize correctly" do
-        @s.should == "\x80\x00\x00\x05" +
+        @s.should == ("\x80\x00\x00\x05" +
           "\x00\x00\x00\x00" +
           "\x00\x00\x00\x05" +
           "\x00\x00\x00\x00" +
           "\x00\x00\x00\x00" +
           "\x00\x00\x00\x00" +
-          "Hello"
+          "Hello").force_encoding("ASCII-8BIT")
       end
     end
 
@@ -36,7 +36,7 @@ describe Memcached::Packet do
       end
 
       it "should serialize correctly" do
-        @s.should == "\x80\x02\x00\x05" +
+        @s.should == ("\x80\x02\x00\x05" +
           "\x08\x00\x00\x00" +
           "\x00\x00\x00\x12" +
           "\x00\x00\x00\x00" +
@@ -45,7 +45,7 @@ describe Memcached::Packet do
           "\xde\xad\xbe\xef" +
           "\x00\x00\x0e\x10" +
           "Hello" +
-          "World"
+          "World").force_encoding("ASCII-8BIT")
       end
     end
   end
@@ -53,10 +53,10 @@ describe Memcached::Packet do
   context "when parsing a response" do
     context "example 4.1.1" do
       before :all do
-        s = "\x81\x00\x00\x00\x00\x00\x00\x01" +
+        s = ("\x81\x00\x00\x00\x00\x00\x00\x01" +
           "\x00\x00\x00\x09\x00\x00\x00\x00" +
           "\x00\x00\x00\x00\x00\x00\x00\x00" +
-          "Not found"
+          "Not found").force_encoding("ASCII-8BIT")
         @pkt = Memcached::Response.parse_header(s[0..23])
         @pkt.parse_body(s[24..-1])
       end
@@ -87,14 +87,14 @@ describe Memcached::Packet do
 
     context "example 4.2.1" do
       before :all do
-        s =  "\x81\x00\x00\x00" +
+        s =  ("\x81\x00\x00\x00" +
           "\x04\x00\x00\x00" +
           "\x00\x00\x00\x09" +
           "\x00\x00\x00\x00" +
           "\x00\x00\x00\x00" +
           "\x00\x00\x00\x01" +
           "\xde\xad\xbe\xef" +
-          "World"
+          "World").force_encoding("ASCII-8BIT")
         @pkt = Memcached::Response.parse_header(s[0..23])
         @pkt.parse_body(s[24..-1])
       end
