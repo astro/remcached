@@ -44,7 +44,7 @@ that, sending lots of those `quiet` commands, except for the last,
 which will be a `normal` command to trigger an acknowledge for all
 commands.
 
-This is of course implemented per-server to accomodate
+This is of course implemented per-server to accommodate
 load-balancing.
 
 
